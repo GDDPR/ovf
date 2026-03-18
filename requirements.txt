@@ -3,4 +3,3 @@ beautifulsoup4
 lxml
 opensearch-py
 python-dotenv
-sentence-transformers

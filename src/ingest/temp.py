@@ -1,3 +1,6 @@
+'''
+deletes every index in OpenSearch cluster
+'''
 import os
 
 from dotenv import load_dotenv

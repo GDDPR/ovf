@@ -1,3 +1,6 @@
+'''
+checks whether your OpenSearch index is cleared
+'''
 import os
 
 from dotenv import load_dotenv

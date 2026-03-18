@@ -14,6 +14,11 @@ def main() -> None:
         print("No relevant context found.")
         return
 
+    answer = generate_answer(question, contexts)
+
+    print("\nGenerated answer:\n")
+    print(answer)
+
     print("\nRetrieved contexts:\n")
     for i, ctx in enumerate(contexts, start=1):
         print(f"Context {i}")
@@ -23,11 +28,6 @@ def main() -> None:
         print(f"URL:     {ctx.get('url', '')}")
         print(f"Text:    {ctx.get('chunk_text', '')[:300]}")
         print("-" * 80)
-
-    answer = generate_answer(question, contexts)
-
-    print("\nGenerated answer:\n")
-    print(answer)
 
 
 if __name__ == "__main__":

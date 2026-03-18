@@ -4,7 +4,7 @@ import re
 import time
 import hashlib
 from datetime import datetime, timezone
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
@@ -117,6 +117,145 @@ def _is_within_main(tag: Tag, main: Tag) -> bool:
     return False
 
 
+def normalize_section_title(title: str) -> str:
+    title = title.strip()
+    title = re.sub(r"^\d+(?:\.\d+)*\s*[\.\-:]?\s*", "", title)
+    return title.strip()
+
+
+def _h2_is_authorities_or_responsibilities(title: str) -> bool:
+    normalized = normalize_section_title(title)
+    return re.search(r"(authorities|responsibilities)\s*$", normalized, re.I) is not None
+
+
+def _strip_trailing_ellipsis(text: str) -> str:
+    text = text.strip()
+    text = re.sub(r"\s*(\.\.\.|…)\s*$", "", text).strip()
+    return text
+
+
+def _cell_text(cell: Tag) -> str:
+    return cell.get_text(" ", strip=True)
+
+
+def _get_table_header_and_row_cells(table_tag: Tag) -> tuple[list[str], list[tuple[Tag, Tag]]]:
+    thead = table_tag.find("thead")
+    tbody = table_tag.find("tbody")
+
+    header_tr = None
+    if thead:
+        header_tr = thead.find("tr")
+    if header_tr is None:
+        header_tr = table_tag.find("tr")
+
+    header_cells: list[str] = []
+    if header_tr:
+        hdr_cells = header_tr.find_all(["th", "td"], recursive=False)
+        if not hdr_cells:
+            hdr_cells = header_tr.find_all(["th", "td"])
+        header_cells = [_strip_trailing_ellipsis(_cell_text(c)) for c in hdr_cells[:2]]
+
+    if thead:
+        if tbody:
+            trs = tbody.find_all("tr")
+        else:
+            trs = table_tag.find_all("tr")
+            if header_tr in trs:
+                trs = trs[trs.index(header_tr) + 1 :]
+    else:
+        trs = table_tag.find_all("tr")
+        trs = trs[1:] if trs else []
+
+    if trs:
+        first = trs[0]
+        first_cells = first.find_all(["th", "td"])
+        if first_cells:
+            t1 = _strip_trailing_ellipsis(_cell_text(first_cells[0])) if len(first_cells) >= 1 else ""
+            t2 = _strip_trailing_ellipsis(_cell_text(first_cells[1])) if len(first_cells) >= 2 else ""
+
+            if first.find("th") is not None or (
+                len(header_cells) >= 2 and t1 == header_cells[0] and t2 == header_cells[1]
+            ):
+                trs = trs[1:]
+
+    data_rows: list[tuple[Tag, Tag]] = []
+    for tr in trs:
+        cells = tr.find_all("td", recursive=False)
+        if len(cells) < 2:
+            cells = tr.find_all(["td", "th"], recursive=False)
+        if len(cells) < 2:
+            cells = tr.find_all(["td", "th"])
+        if len(cells) < 2:
+            continue
+
+        data_rows.append((cells[0], cells[1]))
+
+    return header_cells, data_rows
+
+
+def _format_table_inline(table_tag: Tag) -> list[str]:
+    headers, rows = _get_table_header_and_row_cells(table_tag)
+    if len(headers) < 2 or not rows:
+        return []
+
+    h1 = headers[0].strip()
+    h2 = headers[1].strip()
+
+    out: list[str] = []
+
+    for left_cell, right_cell in rows:
+        left = _cell_text(left_cell).strip()
+
+        lis = right_cell.find_all("li")
+        if lis:
+            bullets = [li.get_text(" ", strip=True).strip() for li in lis if li.get_text(strip=True)]
+            right_text = " ".join(bullets).strip()
+        else:
+            right_text = _cell_text(right_cell).strip()
+
+        row_header = f"{h1} {left} {h2}".strip()
+        paragraph = f"{row_header} {right_text}".strip() if right_text else row_header
+
+        if paragraph:
+            out.append(paragraph)
+
+    return out
+
+
+def _parse_table_authorities_responsibilities(table_tag: Tag, section_title: str) -> list[dict]:
+    headers, rows = _get_table_header_and_row_cells(table_tag)
+    header2 = headers[1].strip() if len(headers) >= 2 else ""
+
+    out: list[dict] = []
+
+    for left_cell, right_cell in rows:
+        left_title = _cell_text(left_cell).strip()
+        if not left_title:
+            continue
+
+        lis = right_cell.find_all("li")
+        if lis:
+            bullets = [li.get_text(" ", strip=True).strip() for li in lis if li.get_text(strip=True)]
+            right_text = " ".join(bullets).strip()
+        else:
+            right_text = _cell_text(right_cell).strip()
+
+        if not right_text:
+            continue
+
+        text_core = f"{header2} {right_text}".strip() if header2 else right_text
+        chunk_text = f"{left_title} {text_core}".strip()
+
+        out.append(
+            {
+                "section": normalize_section_title(section_title),
+                "chunk_text": chunk_text,
+            }
+        )
+
+    return out
+
+
 def extract_sections_from_main(soup: BeautifulSoup) -> list[dict]:
     main = soup.find("main") or soup.find("article") or soup.body
     if not main:
@@ -132,14 +271,33 @@ def extract_sections_from_main(soup: BeautifulSoup) -> list[dict]:
         if not _is_within_main(h2, main):
             continue
 
-        section_title = h2.get_text(" ", strip=True)
+        raw_section_title = h2.get_text(" ", strip=True)
+        if not raw_section_title:
+            continue
+
+        section_title = normalize_section_title(raw_section_title)
         if not section_title:
             continue
 
-        if section_title.strip().lower() == "table of contents":
+        if section_title.lower() == "table of contents":
+            continue
+
+        is_special = _h2_is_authorities_or_responsibilities(raw_section_title)
+
+        first_table: Tag | None = None
+        for el in h2.next_elements:
+            if isinstance(el, Tag) and el.name == "h2":
+                break
+            if isinstance(el, Tag) and el.name == "table" and _is_within_main(el, main):
+                first_table = el
+                break
+
+        if is_special and first_table is not None:
+            sections.extend(_parse_table_authorities_responsibilities(first_table, section_title))
             continue
 
         parts: list[str] = []
+        processed_table_ids: set[int] = set()
 
         for el in h2.next_elements:
             if not isinstance(el, Tag):
@@ -150,10 +308,20 @@ def extract_sections_from_main(soup: BeautifulSoup) -> list[dict]:
             if el.name == "h2":
                 break
 
-            if el.find_parent("table") is not None:
+            parent_table = el.find_parent("table")
+            if parent_table is not None and el.name != "table":
+                continue
+
+            if el.name == "table":
+                if id(el) in processed_table_ids:
+                    continue
+                processed_table_ids.add(id(el))
+                parts.extend(_format_table_inline(el))
                 continue
 
             if el.name in {"p", "li"}:
+                if el.find("table") is not None:
+                    continue
                 text = el.get_text(" ", strip=True)
                 if text:
                     parts.append(text)
@@ -169,8 +337,8 @@ def extract_sections_from_main(soup: BeautifulSoup) -> list[dict]:
         if body_text:
             sections.append(
                 {
-                    "title": section_title,
-                    "text": body_text,
+                    "section": section_title,
+                    "chunk_text": body_text,
                 }
             )
 
@@ -183,15 +351,15 @@ def build_document_record(page_url: str, html: str) -> dict:
     canonical_url = extract_canonical_url(soup, page_url)
     title = extract_title(soup) or "Untitled"
 
-    sections = extract_sections_from_main(soup)
+    raw_sections = extract_sections_from_main(soup)
 
     section_docs = []
-    for section in sections:
+    for section in raw_sections:
         section_docs.append(
             {
                 "title": title,
-                "section": section["title"],
-                "chunk_text": section["text"],
+                "section": section["section"],
+                "chunk_text": section["chunk_text"],
                 "url": canonical_url,
             }
         )

@@ -2,6 +2,7 @@ import hashlib
 import time
 import xml.etree.ElementTree as ET
 from urllib.parse import urlparse
+import os
 
 from daod6000_scraper import scrape_daod6000_items
 
@@ -29,6 +30,8 @@ def indent_xml(elem: ET.Element, level: int = 0) -> None:
 
 
 def add_to_catalog(items: list[dict], catalog_path: str = "./data/catalog.xml") -> None:
+    os.makedirs(os.path.dirname(catalog_path), exist_ok=True)
+
     try:
         tree = ET.parse(catalog_path)
         root = tree.getroot()
