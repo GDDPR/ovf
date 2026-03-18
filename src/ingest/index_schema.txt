@@ -1,0 +1,8 @@
+{
+  "title": "string",
+  "section": "string",
+  "chunk_text": "string",
+  "url": "string",
+  "entities": null,
+  "embedding": [0.0, 0.0, 0.0]
+}

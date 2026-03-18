@@ -1,0 +1,4 @@
+data/
+.env
+src/scrape/__pycache__/
+.venv/

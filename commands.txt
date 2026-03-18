@@ -1,0 +1,12 @@
+docker rm -f ovf_opensearch 2>/dev/null
+
+docker run -d \
+  --name ovf_opensearch \
+  -p 9200:9200 \
+  -p 9600:9600 \
+  -e "discovery.type=single-node" \
+  -e "OPENSEARCH_INITIAL_ADMIN_PASSWORD=OpenSearchTest123!" \
+  opensearchproject/opensearch:latest
+
+# do pip installs
+python -m pip install -r requirements.txt
