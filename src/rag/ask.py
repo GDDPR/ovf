@@ -8,7 +8,22 @@ def main() -> None:
         print("No question entered.")
         return
 
-    contexts = retrieve_context(question, top_k=8)
+    top_k_input = input("Enter top_k: ").strip()
+    if not top_k_input:
+        print("No top_k entered.")
+        return
+
+    try:
+        top_k = int(top_k_input)
+    except ValueError:
+        print("top_k must be an integer.")
+        return
+
+    if top_k <= 0:
+        print("top_k must be greater than 0.")
+        return
+
+    contexts = retrieve_context(question, top_k=top_k)
 
     if not contexts:
         print("No relevant context found.")

@@ -8,7 +8,7 @@ load_dotenv()
 INDEX_NAME = os.getenv("INDEX_NAME", "daod_sections")
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 OLLAMA_EMBED_MODEL = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
-TOP_K = int(os.getenv("TOP_K", "5"))
+TOP_K = int(os.getenv("TOP_K"))
 
 
 def get_opensearch_client() -> OpenSearch:
