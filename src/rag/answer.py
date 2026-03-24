@@ -5,9 +5,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-OLLAMA_CHAT_MODEL = os.getenv("OLLAMA_CHAT_MODEL", "gemma3:latest")
+OLLAMA_CHAT_MODEL = os.getenv("OLLAMA_CHAT_MODEL", "gemma3:12b")
 
-
+"""
+Builds a prompt from retrieved contexts and sends it to Ollama to generate the final answer
+"""
 def build_prompt(question: str, contexts: list[dict]) -> str:
     context_blocks = []
 
@@ -47,9 +49,10 @@ def generate_answer(question: str, contexts: list[dict]) -> str:
         timeout=300,
     )
     response.raise_for_status()
-    data = response.json()
 
+    data = response.json()
     answer = data.get("response", "").strip()
+
     if not answer:
         raise RuntimeError("Ollama returned an empty response.")
 

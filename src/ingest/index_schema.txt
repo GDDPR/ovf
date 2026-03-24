@@ -1,3 +1,4 @@
+# simplified
 {
   "title": "string",
   "section": "string",
@@ -5,4 +6,34 @@
   "url": "string",
   "entities": null,
   "embedding": [0.0, 0.0, 0.0]
+}
+
+
+# actual
+{
+  "mappings": {
+    "properties": {
+      "title": { "type": "text" },
+      "section": { "type": "text" },
+      "chunk_text": { "type": "text" },
+      "url": { "type": "keyword" },
+      "entities": {
+        "type": "object",
+        "enabled": false
+      },
+      "embedding": {
+        "type": "knn_vector",
+        "dimension": 768,
+        "space_type": "innerproduct",
+        "method": {
+          "name": "hnsw",
+          "engine": "lucene",
+          "parameters": {
+            "ef_construction": 100,
+            "m": 16
+          }
+        }
+      }
+    }
+  }
 }

@@ -1,0 +1,2 @@
+# to delete the existing indexes (needs to run create_index.py afterwards)
+DELETE /ovf-docs

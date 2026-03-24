@@ -1,7 +1,9 @@
 from retrieve_context import retrieve_context
 from answer import generate_answer
 
-
+'''
+Runs the end-to-end RAG flow by retrieving relevant context and then generating a final answer
+'''
 def main() -> None:
     question = input("Ask a question: ").strip()
     if not question:
