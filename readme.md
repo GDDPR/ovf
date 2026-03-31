@@ -2,16 +2,14 @@
 
 This guide explains how to run the OVF project with the provided prebuilt OpenSearch data.
 
-## Requirements
+## Assumptions
 
-- Docker Desktop
-- Python 3
-- Git
-- Ollama
-
-Optional:
-- Linux environment
-- WSL on Windows
+- You are using a Linux environment.
+- Docker and `docker compose` are already installed and working.
+- Ollama is already installed.
+- The file `opensearch_data_backup.tar.gz` is provided in the project root.
+- The file `opensearch.yml` is provided in the project root.
+- The provided `docker-compose.yml` already mounts `opensearch.yml` and the `opensearch_data` volume correctly.
 
 ## 1. Clone the project
 
@@ -27,9 +25,9 @@ docker pull opensearchproject/opensearch:3
 docker pull opensearchproject/opensearch-dashboards:3
 ```
 
-## 3. Install and prepare Ollama
+## 3. Prepare Ollama
 
-Install Ollama first, then pull the chat model:
+Pull the chat model:
 
 ```bash
 ollama pull gemma3:12b
@@ -52,6 +50,7 @@ OPENSEARCH_MODEL_ID=4PjDQp0BBb-Rz_blyovD
 
 INDEX_NAME=ovf-docs
 PIPELINE_NAME=ovf-ingest-pipeline
+HYBRID_SEARCH_PIPELINE=ovf-hybrid-pipeline
 INPUT_DIR=./data/docs_json
 
 TOP_K=8
@@ -79,7 +78,7 @@ docker volume create opensearch_data
 Extract the backup:
 
 ```bash
-mkdir restore_tmp
+mkdir -p restore_tmp
 tar xzf opensearch_data_backup.tar.gz -C restore_tmp
 ```
 
@@ -90,6 +89,21 @@ docker run --rm -v opensearch_data:/target -v "$(pwd)/restore_tmp/opensearch_dat
 ```
 
 ## 6. Start the Docker services
+
+Before starting the containers, make sure `opensearch.yml` exists in the project root.
+
+The file should contain:
+
+```yaml
+cluster.name: opensearch-cluster
+network.host: 0.0.0.0
+discovery.type: single-node
+knn.faiss.avx2.disabled: true
+knn.faiss.avx512.disabled: true
+knn.faiss.avx512_spr.disabled: true
+```
+
+Start the containers:
 
 ```bash
 docker compose up -d
@@ -144,7 +158,8 @@ http://localhost:5601
 
 - The project expects the OpenSearch data volume to be named `opensearch_data`.
 - The provided backup already contains the indexed chunk data.
-- If `docker compose up -d` starts successfully and Ollama is running, you should be able to use `ask.py` immediately.
+- The provided OpenSearch data already includes the working `ovf-docs` index.
+- If `docker compose up -d` starts successfully and Ollama is running, you should be able to use `ask.py` immediately without recreating the index or re-ingesting the documents.
 
 ## Quick start summary
 
@@ -155,7 +170,7 @@ docker pull opensearchproject/opensearch:3
 docker pull opensearchproject/opensearch-dashboards:3
 ollama pull gemma3:12b
 docker volume create opensearch_data
-mkdir restore_tmp
+mkdir -p restore_tmp
 tar xzf opensearch_data_backup.tar.gz -C restore_tmp
 docker run --rm -v opensearch_data:/target -v "$(pwd)/restore_tmp/opensearch_data:/source" alpine sh -c 'cp -a /source/. /target/'
 docker compose up -d
