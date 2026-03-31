@@ -8,4 +8,15 @@ To set up indexes in opensearch manually
 
 To use the model:
 
-1. run ask.py
+1. Create the Docker volume:
+docker volume create opensearch_data
+
+2. Extract the backup:
+mkdir restore_tmp
+tar xzf opensearch_data_backup.tar.gz -C restore_tmp
+
+3. Copy the extracted data into the Docker volume:
+docker run --rm -v opensearch_data:/target -v "$(pwd)/restore_tmp/opensearch_data:/source" alpine sh -c 'cp -a /source/. /target/'
+
+4. Start the containers:
+docker compose up -d

@@ -5,7 +5,7 @@ from opensearchpy import OpenSearch
 load_dotenv()
 
 INDEX_NAME = os.getenv("INDEX_NAME", "ovf-docs")
-OPENSEARCH_MODEL_ID = os.getenv("OPENSEARCH_MODEL_ID", "6YOZHZ0BTFNV0VBzOxVn")
+OPENSEARCH_MODEL_ID = os.getenv("OPENSEARCH_MODEL_ID")
 TOP_K = int(os.getenv("TOP_K", "8"))
 
 
