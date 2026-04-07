@@ -1,6 +1,0 @@
-cluster.name: opensearch-cluster
-network.host: 0.0.0.0
-discovery.type: single-node
-knn.faiss.avx2.disabled: true
-knn.faiss.avx512.disabled: true
-knn.faiss.avx512_spr.disabled: true

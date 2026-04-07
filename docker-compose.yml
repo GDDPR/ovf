@@ -3,30 +3,22 @@ services:
     image: opensearchproject/opensearch:3
     container_name: opensearch
     environment:
-      DISABLE_SECURITY_PLUGIN: "true"
-      OPENSEARCH_JAVA_OPTS: "-Xms2g -Xmx2g"
-    volumes:
-      - ./opensearch.yml:/usr/share/opensearch/config/opensearch.yml:ro
-      - opensearch_data:/usr/share/opensearch/data
+      discovery.type: "single-node"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: "OpenSearchTest123!"
     ports:
       - "9200:9200"
       - "9600:9600"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
 
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:3
     container_name: opensearch-dashboards
     depends_on:
       - opensearch
-    environment:
-      OPENSEARCH_HOSTS: '["http://opensearch:9200"]'
-      DISABLE_SECURITY_DASHBOARDS_PLUGIN: "true"
+    volumes:
+      - ./opensearch_dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml:ro
     ports:
       - "5601:5601"
 

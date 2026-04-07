@@ -10,14 +10,26 @@ PIPELINE_NAME = os.getenv("PIPELINE_NAME", "ovf-ingest-pipeline")
 MODEL_ID = os.getenv("OPENSEARCH_MODEL_ID", "6YOZHZ0BTFNV0VBzOxVn")
 
 
+def get_bool_env(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
 def get_client() -> OpenSearch:
     host = os.getenv("OPENSEARCH_HOST", "localhost")
     port = int(os.getenv("OPENSEARCH_PORT", "9200"))
+    user = os.getenv("OPENSEARCH_USER", "admin")
+    password = os.getenv("OPENSEARCH_PASSWORD", "")
+    use_ssl = get_bool_env("OPENSEARCH_USE_SSL", True)
+    verify_certs = get_bool_env("OPENSEARCH_VERIFY_CERTS", False)
 
     return OpenSearch(
         hosts=[{"host": host, "port": port}],
-        use_ssl=False,
-        verify_certs=False,
+        http_auth=(user, password),
+        use_ssl=use_ssl,
+        verify_certs=verify_certs,
         ssl_assert_hostname=False,
         ssl_show_warn=False,
     )

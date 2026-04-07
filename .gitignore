@@ -3,12 +3,6 @@ data/
 src/scrape/__pycache__/
 .venv/
 opensearch_data/
-opensearch_data_backup.tar.gzopensearch_data_backup.tar.gz
-
-opensearch_data_backup.tar.gz
-
-__pycache__/
-*.pyc
 
 opensearch_data_backup.tar.gz
 __pycache__/
