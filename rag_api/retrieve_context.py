@@ -18,7 +18,7 @@ def get_bool_env(name: str, default: bool) -> bool:
 
 
 def get_opensearch_client() -> OpenSearch:
-    host = os.getenv("OPENSEARCH_HOST", "localhost")
+    host = os.getenv("OPENSEARCH_HOST", "opensearch")
     port = int(os.getenv("OPENSEARCH_PORT", "9200"))
     user = os.getenv("OPENSEARCH_USER", "admin")
     password = os.getenv("OPENSEARCH_PASSWORD", "")

@@ -3,3 +3,7 @@ beautifulsoup4
 lxml
 opensearch-py
 python-dotenv
+fastapi
+uvicorn[standard]
+opensearch-py
+pydantic

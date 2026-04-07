@@ -1,12 +1,10 @@
-server.name: opensearch-dashboards
 server.host: "0.0.0.0"
 
 opensearch.hosts: ["https://opensearch:9200"]
+opensearch.username: "admin"
+opensearch.password: "OpenSearchTest123!"
+
 opensearch.ssl.verificationMode: none
-opensearch.username: "kibanaserver"
-opensearch.password: "kibanaserver"
-opensearch.requestHeadersAllowlist: ["securitytenant","Authorization"]
+opensearch.requestHeadersAllowlist: [authorization, securitytenant]
 
 assistant.chat.enabled: true
-observability.query_assist.enabled: true
-ml_commons_dashboards.enabled: true

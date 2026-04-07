@@ -8,6 +8,7 @@ load_dotenv()
 INDEX_NAME = os.getenv("INDEX_NAME", "ovf-docs")
 OPENSEARCH_MODEL_ID = os.getenv("OPENSEARCH_MODEL_ID")
 TOP_K = int(os.getenv("TOP_K", "8"))
+HYBRID_SEARCH_PIPELINE = os.getenv("HYBRID_SEARCH_PIPELINE", "ovf-hybrid-pipeline")
 
 
 def get_bool_env(name: str, default: bool) -> bool:
@@ -18,7 +19,7 @@ def get_bool_env(name: str, default: bool) -> bool:
 
 
 def get_opensearch_client() -> OpenSearch:
-    host = os.getenv("OPENSEARCH_HOST", "localhost")
+    host = os.getenv("OPENSEARCH_HOST", "opensearch")
     port = int(os.getenv("OPENSEARCH_PORT", "9200"))
     user = os.getenv("OPENSEARCH_USER", "admin")
     password = os.getenv("OPENSEARCH_PASSWORD", "")
@@ -42,17 +43,34 @@ def retrieve_context(query_text: str, top_k: int = TOP_K) -> list[dict]:
         "size": top_k,
         "_source": ["title", "section", "chunk_text", "url", "entities"],
         "query": {
-            "neural": {
-                "embedding": {
-                    "query_text": query_text,
-                    "model_id": OPENSEARCH_MODEL_ID,
-                    "k": top_k
-                }
+            "hybrid": {
+                "queries": [
+                    {
+                        "multi_match": {
+                            "query": query_text,
+                            "fields": ["title^3", "section^2", "chunk_text"]
+                        }
+                    },
+                    {
+                        "neural": {
+                            "embedding": {
+                                "query_text": query_text,
+                                "model_id": OPENSEARCH_MODEL_ID,
+                                "k": top_k
+                            }
+                        }
+                    }
+                ]
             }
         }
     }
 
-    response = client.search(index=INDEX_NAME, body=body)
+    response = client.search(
+        index=INDEX_NAME,
+        body=body,
+        params={"search_pipeline": HYBRID_SEARCH_PIPELINE}
+    )
+
     hits = response.get("hits", {}).get("hits", [])
 
     results = []
