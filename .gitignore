@@ -5,5 +5,6 @@ src/scrape/__pycache__/
 opensearch_data/
 
 opensearch_data_backup.tar.gz
+ovf_opensearch_data_backup.tar.gz
 __pycache__/
 *.pyc

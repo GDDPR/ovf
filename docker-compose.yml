@@ -28,33 +28,5 @@ services:
     ports:
       - "5601:5601"
 
-  rag-api:
-    build:
-      context: ./rag_api
-    container_name: rag-api
-    depends_on:
-      opensearch:
-        condition: service_healthy
-    environment:
-      INDEX_NAME: ovf-docs
-      OPENSEARCH_MODEL_ID: "${OPENSEARCH_MODEL_ID}"
-      HYBRID_SEARCH_PIPELINE: ovf-hybrid-pipeline
-
-      OPENSEARCH_HOST: opensearch
-      OPENSEARCH_PORT: 9200
-      OPENSEARCH_USER: admin
-      OPENSEARCH_PASSWORD: OpenSearchTest123!
-      OPENSEARCH_USE_SSL: "true"
-      OPENSEARCH_VERIFY_CERTS: "false"
-
-      OLLAMA_HOST: http://ollama:11434
-      OLLAMA_CHAT_MODEL: gemma3:12b
-
-      DEFAULT_RETRIEVER: semantic
-      DEFAULT_TOP_K: 8
-      PORT: 8000
-    ports:
-      - "8000:8000"
-
 volumes:
   opensearch_data:
