@@ -8,3 +8,5 @@ opensearch_data_backup.tar.gz
 ovf_opensearch_data_backup.tar.gz
 __pycache__/
 *.pyc
+opensearch_setup.md
+commands.txt
